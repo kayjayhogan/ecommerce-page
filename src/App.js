@@ -18,11 +18,26 @@ class App extends React.Component {
   unsubscribeFromAuth = null;
 
   componentDidMount() {
-    this.unsubscribeFromAuth = auth.onAuthStateChanged(async user => {
-      createUserProfileDocument(user);
-      this.setState({
-        currentUser: user
-      });
+    // handle Google user auth
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
+      if(userAuth) {
+        const userRef = await createUserProfileDocument(userAuth);
+        userRef.onSnapshot(snapShot => {
+          // snapShot.data() has actual fields like displayName, email, etc.
+          // snapShot itself has metadata like id and whether it exists
+          this.setState({
+            currentUser: {
+              id: snapShot.id,
+              ...snapShot.data()
+            }
+          });
+        });
+      } else {
+        // equivalent to saying if user logged out, set currentUser to null
+        this.setState({
+          currentUser: userAuth
+        })
+      }
     });
   }
 
